@@ -480,7 +480,7 @@ CNode* ConnectNode(CAddress addrConnect, const char *pszDest)
     {
         addrman.Attempt(addrConnect);
 
-        LogPrint("net", "connected %s\n", pszDest ? pszDest : addrConnect.ToString());
+        LogPrint("net", "connected %s outbound\n", pszDest ? pszDest : addrConnect.ToString());
 
         // Set to non-blocking
 #ifdef WIN32
@@ -513,7 +513,7 @@ void CNode::CloseSocketDisconnect()
     fDisconnect = true;
     if (hSocket != INVALID_SOCKET)
     {
-        LogPrint("net", "disconnecting node %s\n", addrName);
+        LogPrint("net", "disconnecting node %s %s\n", addrName, fInbound ? "inbound" : "outbound");
         closesocket(hSocket);
         hSocket = INVALID_SOCKET;
     }
@@ -815,6 +815,23 @@ void ThreadSocketHandler()
         if(vNodes.size() != nPrevNodeCount) {
             nPrevNodeCount = vNodes.size();
             uiInterface.NotifyNumConnectionsChanged(nPrevNodeCount);
+            // count various node attributes
+            int fullNodes = 0;
+            int spvNodes = 0;
+            int inboundNodes = 0;
+            int outboundNodes = 0;
+            BOOST_FOREACH(CNode* pnode, vNodes)
+            {
+                if(pnode->fClient)
+                    spvNodes++;
+                else
+                    fullNodes++;
+                if(pnode->fInbound)
+                    inboundNodes++;
+                else
+                    outboundNodes++;
+            }
+            LogPrint("peering", "connections: spv %d, full %d, inbound %d, outbound %d \n", spvNodes, fullNodes, inboundNodes, outboundNodes);
         }
 
 
@@ -940,7 +957,7 @@ void ThreadSocketHandler()
             }
             else
             {
-                LogPrint("net", "accepted connection %s\n", addr.ToString());
+                LogPrint("net", "accepted connection %s inbound\n", addr.ToString());
                 CNode* pnode = new CNode(hSocket, addr, "", true);
                 pnode->AddRef();
                 {
