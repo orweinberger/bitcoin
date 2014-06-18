@@ -480,7 +480,6 @@ CNode* ConnectNode(CAddress addrConnect, const char *pszDest)
     {
         addrman.Attempt(addrConnect);
 
-        LogPrint("net", "connected %s outbound\n", pszDest ? pszDest : addrConnect.ToString());
 
         // Set to non-blocking
 #ifdef WIN32
@@ -495,7 +494,7 @@ CNode* ConnectNode(CAddress addrConnect, const char *pszDest)
         // Add node
         CNode* pnode = new CNode(hSocket, addrConnect, pszDest ? pszDest : "", false);
         pnode->AddRef();
-
+        LogPrint("net", "connected %s outbound\n", pszDest ? pszDest : addrConnect.ToString());
         {
             LOCK(cs_vNodes);
             vNodes.push_back(pnode);
@@ -513,7 +512,7 @@ void CNode::CloseSocketDisconnect()
     fDisconnect = true;
     if (hSocket != INVALID_SOCKET)
     {
-        LogPrint("net", "disconnecting node %s %s\n", addrName, fInbound ? "inbound" : "outbound");
+        LogPrint("net", "disconnecting node %s %d %s\n", addrName, nVersion, fInbound ? "inbound" : "outbound");
         closesocket(hSocket);
         hSocket = INVALID_SOCKET;
     }
@@ -957,8 +956,8 @@ void ThreadSocketHandler()
             }
             else
             {
-                LogPrint("net", "accepted connection %s inbound\n", addr.ToString());
                 CNode* pnode = new CNode(hSocket, addr, "", true);
+                LogPrint("net", "accepted connection %s inbound\n", addr.ToString());
                 pnode->AddRef();
                 {
                     LOCK(cs_vNodes);
